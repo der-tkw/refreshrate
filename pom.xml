@@ -1,0 +1,77 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.timbooo</groupId>
+    <artifactId>refreshrate</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>refreshrate</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.akathist.maven.plugins.launch4j</groupId>
+                <artifactId>launch4j-maven-plugin</artifactId>
+                <version>1.7.15</version>
+                <executions>
+                    <execution>
+                        <id>l4j-gui</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>launch4j</goal>
+                        </goals>
+                        <configuration>
+                            <headerType>gui</headerType>
+                            <outfile>target/RefreshRate.exe</outfile>
+                            <jar>target/${project.artifactId}-${project.version}.jar</jar>
+                            <classPath>
+                                <mainClass>de.timbooo.App</mainClass>
+                            </classPath>
+                            <icon>icon.ico</icon>
+                            <jre>
+                                <minVersion>1.8.0</minVersion>
+                                <initialHeapSize>16</initialHeapSize>
+                                <maxHeapSize>128</maxHeapSize>
+                            </jre>
+                            <versionInfo>
+                                <copyright>Copyright (c) 2017</copyright>
+                                <companyName>timbooo.de</companyName>
+                                <fileDescription>Refresh Rate</fileDescription>
+                                <fileVersion>1.0.0.1</fileVersion>
+                                <productVersion>1.0.0.1</productVersion>
+                                <txtFileVersion>${project.version}</txtFileVersion>
+                                <txtProductVersion>${project.version}</txtProductVersion>
+                                <productName>Refresh Rate</productName>
+                                <internalName>Refresh Rate</internalName>
+                                <originalFilename>RefreshRate.exe</originalFilename>
+                            </versionInfo>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
