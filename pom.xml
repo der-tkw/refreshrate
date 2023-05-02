@@ -72,6 +72,9 @@
                                 <mainClass>de.dertkw.App</mainClass>
                             </classPath>
                             <icon>icon.ico</icon>
+                            <singleInstance>
+                                <mutexName>RefreshRate</mutexName>
+                            </singleInstance>
                             <jre>
                                 <path>%JAVA_HOME%</path>
                                 <minVersion>1.8.0</minVersion>
