@@ -64,11 +64,11 @@ public class Utils {
             if (selectedFile.getName().equals("ChangeScreenResolution.exe")) {
                 Utils.storeCSRPath(selectedFile.getAbsolutePath());
             } else {
-                JOptionPane.showMessageDialog(null, "Incorrect exe. Please choose ChangeScreenResolution.exe");
+                JOptionPane.showMessageDialog(null, "Incorrect file. Please choose ChangeScreenResolution.exe");
             }
         } else if (result == JFileChooser.CANCEL_OPTION) {
             if (getCSRPath() == null) {
-                String msg = "RefreshRate cannot work without ChangeScreenResolution. Please restart the app.";
+                String msg = "Cannot work without ChangeScreenResolution. Please restart the app.";
                 JOptionPane.showMessageDialog(null, msg);
                 throw new RuntimeException(msg);
             }
@@ -78,6 +78,8 @@ public class Utils {
     public static void resetPreferences() {
         try {
             Preferences.userNodeForPackage(RefreshRate.class).clear();
+            JOptionPane.showMessageDialog(null, "Preferences have been reset. Please restart the app.");
+            System.exit(0);
         } catch (BackingStoreException e) {
             throw new RuntimeException(e);
         }
@@ -159,6 +161,8 @@ public class Utils {
             if (exitCode != 0) {
                 Logger.error("Command exited abnormally: " + exitCode);
             }
+            // add minimal delay so that output can be processed
+            Thread.sleep(100);
             return new ArrayList<>(outputGobbler.getOutput());
         } catch (Exception e) {
             throw new RuntimeException(e);

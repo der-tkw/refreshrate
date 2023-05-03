@@ -15,10 +15,11 @@ public class App {
     public static void main(String[] args) {
         try {
             boolean debug = Arrays.asList(args).contains("debug");
+
+            // configure logger
             String level = debug ? "debug" : "info";
             String format = "{date: HH:mm:ss.SSS} {class}.{method}() {level}: {message}";
 
-            // configure logger
             Configuration.set("writer1", "console");
             Configuration.set("writer1.level", level);
             Configuration.set("writer1.format", format);
@@ -35,7 +36,7 @@ public class App {
             }
 
             // launch app
-            final RefreshRate app = new RefreshRate(debug);
+            final RefreshRate app = new RefreshRate();
 
             // update now and every 5 minutes
             Runnable runnable = app::update;

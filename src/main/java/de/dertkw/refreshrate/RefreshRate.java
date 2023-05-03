@@ -8,16 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RefreshRate {
-    private final boolean debug;
     private TrayIcon icon;
     private List<Display> displays;
     private Display selectedDisplay;
     private final List<CheckboxMenuItem> displayCheckboxes = new ArrayList<>();
     private final PopupMenu menu = new PopupMenu();
-
-    public RefreshRate(boolean debug) {
-        this.debug = debug;
-    }
 
     public void update() {
         Logger.info("Updating everything");
@@ -55,7 +50,10 @@ public class RefreshRate {
         displayCheckboxes.clear();
 
         for (final Display display : displays) {
-            final CheckboxMenuItem cmi = new CheckboxMenuItem(display.getNameAndResolution(), display.equals(selectedDisplay));
+            boolean activeDisplay = display.equals(selectedDisplay);
+            final Menu displayMenu = new Menu(display.getNameAndResolution() + (activeDisplay ? " *" : ""));
+            displayMenu.setName(String.valueOf(display.getIndex()));
+            final CheckboxMenuItem cmi = new CheckboxMenuItem("Show In Tray", activeDisplay);
             cmi.setName(String.valueOf(display.getIndex()));
             cmi.addItemListener(e -> {
                 selectedDisplay = display;
@@ -67,41 +65,34 @@ public class RefreshRate {
                 update();
             });
             displayCheckboxes.add(cmi);
-            menu.add(cmi);
+            displayMenu.add(cmi);
+            displayMenu.addSeparator();
+            for (Integer refreshRate : display.getRefreshRates()) {
+                boolean isCurrent = display.getRefreshRate().equals(refreshRate);
+                MenuItem mi = new MenuItem(refreshRate + " Hz");
+                mi.setName(String.valueOf(refreshRate));
+                mi.setEnabled(!isCurrent);
+                if (!isCurrent) {
+                    mi.addActionListener(e -> {
+                        int rate = Integer.parseInt(((MenuItem) e.getSource()).getName());
+                        Utils.changeRefreshRate(display, rate);
+                        display.setRefreshRate(rate);
+                        update();
+                    });
+                }
+                displayMenu.add(mi);
+            }
+            menu.add(displayMenu);
         }
         menu.addSeparator();
 
-        Menu changeRefreshRate = new Menu("Change Refresh Rate");
-        for (Integer refreshRate : selectedDisplay.getRefreshRates()) {
-            boolean isCurrent = selectedDisplay.getRefreshRate().equals(refreshRate);
-            MenuItem mi = new MenuItem(refreshRate + " Hz");
-            mi.setName(String.valueOf(refreshRate));
-            mi.setEnabled(!isCurrent);
-            if (!isCurrent) {
-                mi.addActionListener(e -> {
-                    int rate = Integer.parseInt(((MenuItem) e.getSource()).getName());
-                    Utils.changeRefreshRate(selectedDisplay, rate);
-                    selectedDisplay.setRefreshRate(rate);
-                    update();
-                });
-            }
-            changeRefreshRate.add(mi);
-        }
-        menu.add(changeRefreshRate);
-
-        MenuItem setPath = new MenuItem("Configure ChangeScreenResolution");
-        setPath.addActionListener(e -> Utils.triggerCSRPath());
-        menu.add(setPath);
-
-        MenuItem updateItem = new MenuItem("Force Update");
+        MenuItem updateItem = new MenuItem("Update Manually");
         updateItem.addActionListener(e -> update());
         menu.add(updateItem);
 
-        if (debug) {
-            MenuItem resetItem = new MenuItem("Reset Preferences");
-            resetItem.addActionListener(e -> Utils.resetPreferences());
-            menu.add(resetItem);
-        }
+        MenuItem resetItem = new MenuItem("Reset Preferences");
+        resetItem.addActionListener(e -> Utils.resetPreferences());
+        menu.add(resetItem);
 
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));
