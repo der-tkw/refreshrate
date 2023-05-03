@@ -2,19 +2,22 @@ package de.dertkw.refreshrate;
 
 import org.tinylog.Logger;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RefreshRate {
+    private final boolean debug;
     private TrayIcon icon;
     private List<Display> displays;
     private Display selectedDisplay;
     private final List<CheckboxMenuItem> displayCheckboxes = new ArrayList<>();
     private final PopupMenu menu = new PopupMenu();
+
+    public RefreshRate(boolean debug) {
+        this.debug = debug;
+    }
 
     public void update() {
         Logger.info("Updating everything");
@@ -87,27 +90,18 @@ public class RefreshRate {
         menu.add(changeRefreshRate);
 
         MenuItem setPath = new MenuItem("Configure ChangeScreenResolution");
-        setPath.addActionListener(e -> {
-            Logger.debug("Opening file chooser");
-            JFileChooser fc = new JFileChooser();
-            String path = Utils.getCSRPath();
-            if (path != null && !path.isEmpty()) {
-                File file = new File(path);
-                if (file.exists() && file.isFile()) {
-                    fc.setCurrentDirectory(file.getParentFile());
-                }
-            }
-            int result = fc.showOpenDialog(new JDialog());
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fc.getSelectedFile();
-                Utils.storeCSRPath(selectedFile.getAbsolutePath());
-            }
-        });
+        setPath.addActionListener(e -> Utils.triggerCSRPath());
         menu.add(setPath);
 
         MenuItem updateItem = new MenuItem("Force Update");
         updateItem.addActionListener(e -> update());
         menu.add(updateItem);
+
+        if (debug) {
+            MenuItem resetItem = new MenuItem("Reset Preferences");
+            resetItem.addActionListener(e -> Utils.resetPreferences());
+            menu.add(resetItem);
+        }
 
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));

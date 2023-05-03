@@ -5,40 +5,82 @@ import org.tinylog.Logger;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
 import java.util.List;
 import java.util.*;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
 public class Utils {
-    private static final String LAST_SELECTION_PREF_KEY = "lastSelection";
-    private static final String CSR_PATH_PREF_KEY = "csrPath";
-
-    private static List<String> displayNames;
-    private static final String PS_GET_DISPLAY_INFO = "powershell.exe -command \"get-wmiobject -Query 'select * from Win32_PnPEntity where service=\\\"monitor\\\"' | select Name | ft -HideTableHeaders\"";
+    private static final String PREF_KEY_LAST_SELECTION = "lastSelection";
+    private static final String PREF_KEY_CSR_PATH = "csrPath";
 
     private Utils() {
     }
 
     public static int getLastSelection() {
         Preferences preferences = Preferences.userNodeForPackage(RefreshRate.class);
-        return preferences.getInt(LAST_SELECTION_PREF_KEY, 0);
+        return preferences.getInt(PREF_KEY_LAST_SELECTION, 0);
     }
 
     public static void storeLastSelection(int index) {
-        Preferences.userNodeForPackage(RefreshRate.class).putInt(LAST_SELECTION_PREF_KEY, index);
+        Preferences.userNodeForPackage(RefreshRate.class).putInt(PREF_KEY_LAST_SELECTION, index);
         Logger.debug("Stored last selected device: " + index);
     }
 
     public static String getCSRPath() {
         Preferences preferences = Preferences.userNodeForPackage(RefreshRate.class);
-        return preferences.get(CSR_PATH_PREF_KEY, null);
+        String path = preferences.get(PREF_KEY_CSR_PATH, null);
+        if (path == null) {
+            return null;
+        } else {
+            // validate path
+            File tmp = new File(path);
+            if (!tmp.exists() || tmp.isDirectory()) {
+                return null;
+            }
+        }
+        return path;
     }
 
     public static void storeCSRPath(String path) {
-        Preferences.userNodeForPackage(RefreshRate.class).put(CSR_PATH_PREF_KEY, path);
+        Preferences.userNodeForPackage(RefreshRate.class).put(PREF_KEY_CSR_PATH, path);
         Logger.debug("Stored CSR path: " + path);
+    }
+
+    public static void triggerCSRPath() {
+        Logger.debug("Opening file chooser");
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Choose ChangeScreenResolution.exe ...");
+        String path = Utils.getCSRPath();
+        if (path != null) {
+            File file = new File(path);
+            fc.setCurrentDirectory(file.getParentFile());
+        }
+        int result = fc.showOpenDialog(new JDialog());
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fc.getSelectedFile();
+            if (selectedFile.getName().equals("ChangeScreenResolution.exe")) {
+                Utils.storeCSRPath(selectedFile.getAbsolutePath());
+            } else {
+                JOptionPane.showMessageDialog(null, "Incorrect exe. Please choose ChangeScreenResolution.exe");
+            }
+        } else if (result == JFileChooser.CANCEL_OPTION) {
+            if (getCSRPath() == null) {
+                String msg = "RefreshRate cannot work without ChangeScreenResolution. Please restart the app.";
+                JOptionPane.showMessageDialog(null, msg);
+                throw new RuntimeException(msg);
+            }
+        }
+    }
+
+    public static void resetPreferences() {
+        try {
+            Preferences.userNodeForPackage(RefreshRate.class).clear();
+        } catch (BackingStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static BufferedImage createImage(int rr) {
@@ -53,104 +95,71 @@ public class Utils {
 
     public static List<Display> getDisplays() {
         Logger.debug("Loading displays");
-        GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-
         List<Display> displays = new ArrayList<>();
-        for (int i = 0; i < devices.length; i++) {
-            GraphicsDevice device = devices[i];
-            displays.add(new Display(i, device, getDisplayName(i), device.getDisplayMode().getRefreshRate(), loadRefreshRates(device)));
+
+        List<String> output = executeCSRCommand("/l");
+        Display tmpDisplay = null;
+        int index = 0;
+        String settings = "Settings: ";
+        for (String line : output) {
+            if (line.contains("[")) {
+                int tmpIndex = index++;
+                String prefix = "DISPLAY" + (tmpIndex + 1);
+                String card = line.substring(line.indexOf(prefix) + prefix.length()).trim();
+                tmpDisplay = new Display(tmpIndex, card);
+            } else if (line.contains(settings)) {
+                String resolution = line.substring(line.indexOf(settings) + settings.length(), line.lastIndexOf("@")).trim();
+                Integer refreshRate = Integer.valueOf(line.substring(line.indexOf("@") + 1, line.indexOf("Hz")));
+                if (tmpDisplay != null) {
+                    tmpDisplay.initSettings(resolution, refreshRate);
+                    displays.add(tmpDisplay);
+                }
+            }
         }
 
-        if (devices.length == 0 || displays.isEmpty()) {
+        for (Display display : displays) {
+            Set<Integer> refreshRates = new HashSet<>();
+            output = executeCSRCommand("/m /d=" + display.getIndex());
+            for (String line : output) {
+                if (line.contains("@")) {
+                    int refreshRate = Integer.parseInt(line.substring(line.indexOf("@") + 1, line.indexOf("Hz")));
+                    if (refreshRate % 10 != 9) {
+                        refreshRates.add(refreshRate);
+                    }
+                }
+            }
+            display.initRefreshRates(refreshRates.stream().sorted(Collections.reverseOrder()).collect(Collectors.toList()));
+        }
+
+        if (displays.isEmpty()) {
             throw new RuntimeException("No devices found in your environment.");
         }
         return displays;
     }
 
-    public static String getDisplayName(int index) {
-        if (displayNames == null) {
-            loadDisplayNames();
-        }
-        if (displayNames.size() >= (index + 1)) {
-            return displayNames.get(index);
-        }
-        return null;
-    }
-
     public static void changeRefreshRate(Display display, int refreshRate) {
-        String path = getCSRPath();
-        if (path == null) {
-            prohibitChange();
-            return;
-        }
-        File file = new File(path);
-        if (!file.exists() || !file.isFile()) {
-            prohibitChange();
-            return;
-        }
-
-        executeCommand("\"" + path + "\" /d=" + display.getIndex() + " /f=" + refreshRate);
+        executeCSRCommand("/d=" + display.getIndex() + " /f=" + refreshRate);
     }
 
-    private static void prohibitChange() {
-        JOptionPane.showMessageDialog(null, "Refresh rate cannot be changed. Configure ChangeScreenResolution first.");
-    }
-
-    private static List<Integer> loadRefreshRates(GraphicsDevice device) {
-        Logger.debug("Loading refresh rates for device " + device.getIDstring());
-        Set<Integer> result = new HashSet<>();
-        for (DisplayMode mode : device.getDisplayModes()) {
-            int refreshRate = mode.getRefreshRate();
-            if (refreshRate % 10 != 9) {
-                result.add(refreshRate);
-            }
-        }
-        return result.stream().sorted(Collections.reverseOrder()).collect(Collectors.toList());
-    }
-
-    /**
-     * It is not possible to map the display names or any other output from wmi to the information from AWT, so this is currently not used.
-     */
-    private static void loadDisplayNames() {
-        List<String> result = executeCommand(PS_GET_DISPLAY_INFO);
-        displayNames = result.stream().filter(s -> s != null && !s.isEmpty()).map(Utils::fixName).collect(Collectors.toList());
-    }
-
-    private static String fixName(String name) {
-        String prefix = "Generic Monitor (";
-        if (name.startsWith(prefix)) {
-            return name.substring(prefix.length(), name.lastIndexOf(")"));
-        }
-        return name;
+    private static List<String> executeCSRCommand(String options) {
+        return executeCommand("\"" + getCSRPath() + "\" " + options);
     }
 
     private static List<String> executeCommand(String cmd) {
         Logger.info("Executing command: " + cmd);
         try {
             Process process = Runtime.getRuntime().exec(cmd);
+
+            StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), "OUTPUT");
+            StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), "ERROR");
+            errorGobbler.start();
+            outputGobbler.start();
+
             int exitCode = process.waitFor();
-            List<String> result = new ArrayList<>();
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-
-            String line;
-            while ((line = stdInput.readLine()) != null) {
-                if (!line.isEmpty()) {
-                    result.add(line);
-                    Logger.debug(line);
-                }
-            }
-
-            while ((line = stdError.readLine()) != null) {
-                if (!line.isEmpty()) {
-                    Logger.error(line);
-                }
-            }
-
             if (exitCode != 0) {
-                Logger.error("Command exited abnormally: " +  exitCode);
+                Logger.error("Command exited abnormally: " + exitCode);
             }
-            return result;
+            return new ArrayList<>(outputGobbler.getOutput());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

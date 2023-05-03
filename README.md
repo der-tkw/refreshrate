@@ -1,6 +1,6 @@
 # Refresh Rate
 - Simple tray icon application
-- Shows the refresh rate of the currently selected display
+- Shows the refresh rate of the currently selected display in the tray icon
 - Stores last selected display
 - Allows to change the refresh rate of the currently selected display (via ChangeScreenResolution.exe tool)
 - Only tested with Windows 11

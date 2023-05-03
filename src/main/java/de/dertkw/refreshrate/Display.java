@@ -1,25 +1,28 @@
 package de.dertkw.refreshrate;
 
-import java.awt.*;
 import java.util.List;
 import java.util.Objects;
 
 public class Display {
     private final int index;
-    private final GraphicsDevice device;
     private final String name;
-    private final List<Integer> refreshRates;
+    private final String card;
+    private String resolution;
     private Integer refreshRate;
+    private List<Integer> refreshRates;
 
-    /**
-     * @see Utils#loadDisplayNames
-     */
-    public Display(int index, GraphicsDevice device, String name, Integer refreshRate, List<Integer> refreshRates) {
+    public Display(int index, String card) {
         this.index = index;
-        this.device = device;
+        this.card = card;
         this.name = "Display " + (index + 1);
-        //this.name = name;
+    }
+
+    public void initSettings(String resolution, Integer refreshRate) {
+        this.resolution = resolution;
         this.refreshRate = refreshRate;
+    }
+
+    public void initRefreshRates(List<Integer> refreshRates) {
         this.refreshRates = refreshRates;
     }
 
@@ -27,12 +30,8 @@ public class Display {
         return index;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public String getNameAndResolution() {
-        return name + " (" + getResolution() + ")";
+        return name + " (" + resolution + ")";
     }
 
     public Integer getRefreshRate() {
@@ -45,15 +44,6 @@ public class Display {
 
     public List<Integer> getRefreshRates() {
         return refreshRates;
-    }
-
-    private String getResolution() {
-        DisplayMode dm = device.getDisplayMode();
-        StringBuilder sb = new StringBuilder();
-        sb.append(dm.getWidth());
-        sb.append(" x ");
-        sb.append(dm.getHeight());
-        return sb.toString();
     }
 
     @Override
@@ -72,11 +62,13 @@ public class Display {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(name);
-        sb.append(" @ ");
-        sb.append(getResolution());
-        sb.append(", ");
+        sb.append(" (");
+        sb.append(resolution);
+        sb.append(" @");
         sb.append(refreshRate);
-        sb.append(" Hz");
+        sb.append("Hz on ");
+        sb.append(card);
+        sb.append(")");
         return sb.toString();
     }
 }
