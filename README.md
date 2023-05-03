@@ -9,6 +9,12 @@
 - JRE/JDK installed and `JAVA_HOME` environment variable properly set 
 - [ChangeScreenResolution](http://tools.taubenkorb.at/change-screen-resolution/) must be installed on your system and selected when the app starts for the first time
 
+### Installation
+- Place RefreshRate.exe in some directory
+- Download CSR (link above) and place it next to RefreshRate.exe
+- Start RefreshRate.exe and choose path to CSR
+- (Optional) Put shortcut to RefreshRate.exe into your startup directory
+
 ### Known Issues
 - Menu gets stale when periodic update (every 5 minutes) is triggered
 - Display names cannot be properly fetched and are thus not displayed at the moment (if you have a way, let me know)
