@@ -4,7 +4,7 @@
 
     <groupId>de.timbooo</groupId>
     <artifactId>refreshrate</artifactId>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <packaging>jar</packaging>
     <inceptionYear>2017</inceptionYear>
     <organization>
@@ -85,8 +85,8 @@
                                 <copyright>Copyright (c) 2023</copyright>
                                 <companyName>dertkw.de</companyName>
                                 <fileDescription>Refresh Rate</fileDescription>
-                                <fileVersion>1.4.0.0</fileVersion>
-                                <productVersion>1.4.0.0</productVersion>
+                                <fileVersion>1.5.0.0</fileVersion>
+                                <productVersion>1.5.0.0</productVersion>
                                 <txtFileVersion>${project.version}</txtFileVersion>
                                 <txtProductVersion>${project.version}</txtProductVersion>
                                 <productName>Refresh Rate</productName>
