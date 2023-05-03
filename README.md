@@ -1,23 +1,21 @@
 # Refresh Rate
 - Simple tray icon application
-- Shows the refresh rate of the currently selected display in the tray icon
-- Stores last selected display
-- Allows to change the refresh rate of any display (via ChangeScreenResolution.exe tool)
+- Shows the refresh rate of the configured display in the tray icon
+- Remembers last selected display after restart
+- Allows to change the refresh rate of any connected display
 - Only tested with Windows 11
 
-### Requirements
-- JRE/JDK installed and `JAVA_HOME` environment variable properly set 
-- [ChangeScreenResolution](http://tools.taubenkorb.at/change-screen-resolution/) must be installed on your system and selected when the app starts for the first time
-
 ### Installation
+- Install Java JRE/JDK in case it is not installed
+- Ensure that `JAVA_HOME` is properly set
 - Place RefreshRate.exe in some directory
-- Download CSR (link above) and place it next to RefreshRate.exe
+- Download [ChangeScreenResolution](http://tools.taubenkorb.at/change-screen-resolution/) and place it next to RefreshRate.exe
 - Start RefreshRate.exe and choose path to CSR
 - (Optional) Put shortcut to RefreshRate.exe into your startup directory
 
 ### Known Issues
 - Menu gets stale when periodic update (every 5 minutes) is triggered
-- Display names cannot be properly fetched and are thus not displayed at the moment (if you have a way, let me know)
+- Display names cannot be properly fetched and are therefore not displayed
 
 ### Screenshots
 ![Tray Icon + Tooltip](https://i.imgur.com/k5q4uhq.png)
