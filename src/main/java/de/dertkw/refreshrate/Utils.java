@@ -121,7 +121,7 @@ public class Utils {
             Set<Integer> refreshRates = new HashSet<>();
             output = executeCSRCommand("/m /d=" + display.getIndex());
             for (String line : output) {
-                if (line.contains("@")) {
+                if (line.contains("@") && line.contains(display.getResolution())) {
                     int refreshRate = Integer.parseInt(line.substring(line.indexOf("@") + 1, line.indexOf("Hz")));
                     if (refreshRate % 10 != 9) {
                         refreshRates.add(refreshRate);

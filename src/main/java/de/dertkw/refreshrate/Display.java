@@ -34,6 +34,10 @@ public class Display {
         return name + " (" + resolution + ")";
     }
 
+    public String getResolution() {
+        return resolution;
+    }
+
     public Integer getRefreshRate() {
         return refreshRate;
     }
